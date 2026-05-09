@@ -6,226 +6,122 @@
     <title>VibeReader Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    <style>
-        /* Modern Scrollbar ve Animasyonlar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #18181b; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #52525b; }
-        
-        .wave-bar {
-            width: 4px;
-            background: #3b82f6;
-            border-radius: 4px;
-            animation: wave 1s ease-in-out infinite;
-        }
-        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
-        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
-        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
-        
-        @keyframes wave {
-            0%, 100% { height: 8px; }
-            50% { height: 24px; }
-        }
-    </style>
-</head>
-<body class="bg-[#09090b] text-zinc-300 min-h-screen flex flex-col items-center p-4 md:p-8 font-sans selection:bg-blue-500/30 selection:text-blue-200">
-
-    <div class="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <!-- Sol Panel: Ayarlar ve Kontroller -->
-        <div class="lg:col-span-5 space-y-6">
-            <!-- Header -->
-            <div class="bg-zinc-900/50 backdrop-blur-xl p-6 rounded-3xl border border-zinc-800/50 shadow-2xl">
-                <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent mb-1">VibeReader Pro</h1>
-                <p class="text-xs text-zinc-500 font-medium">Yapay Zeka Destekli Metin Seslendirme</p>
-            </div>
-
-            <!-- Dosya Yükleme -->
-            <div class="bg-zinc-900/50 backdrop-blur-xl p-1 rounded-3xl border border-zinc-800/50 shadow-xl relative group">
-                <input type="file" id="fileInput" accept=".pdf, .docx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                <div class="flex flex-col items-center justify-center p-8 border-2 border-dashed border-zinc-700/50 rounded-[1.3rem] group-hover:border-blue-500/50 transition-colors bg-zinc-900/30">
-                    <div class="w-12 h-12 bg-zinc-800 rounded-2xl flex items-center justify-center mb-3 text-2xl group-hover:scale-110 transition-transform">📄</div>
-                    <span class="text-sm font-semibold text-zinc-400" id="fileNameDisplay">PDF veya Word dosyası seç</span>
-                    <span class="text-[10px] text-zinc-600 mt-1">veya sürükleyip bırakın</span>
-                </div>
-            </div>
-
-            <!-- Ses Ayarları -->
-            <div class="bg-zinc-900/50 backdrop-blur-xl p-6 rounded-3xl border border-zinc-800/50 shadow-xl space-y-5">
-                <div>
-                    <label class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 flex">Ses Modeli</label>
-                    <select id="voiceSelect" class="w-full bg-zinc-950 text-zinc-300 rounded-xl p-3 outline-none border border-zinc-800 focus:border-blue-500/50 text-sm transition-colors cursor-pointer appearance-none"></select>
-                </div>
-
-                <div class="space-y-4 pt-2">
-                    <!-- Hız -->
-                    <div class="group">
-                        <div class="flex justify-between text-xs font-semibold text-zinc-400 mb-2">
-                            <span>Hız</span>
-                            <span id="speedValue" class="text-blue-400">1.0x</span>
-                        </div>
-                        <input type="range" id="rateSlider" min="0.5" max="2" value="1" step="0.1" class="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
-                    </div>
-                    <!-- Ton -->
-                    <div class="group">
-                        <div class="flex justify-between text-xs font-semibold text-zinc-400 mb-2">
-                            <span>Ses Tonu</span>
-                            <span id="pitchValue" class="text-indigo-400">1.0</span>
-                        </div>
-                        <input type="range" id="pitchSlider" min="0" max="2" value="1" step="0.1" class="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
-                    </div>
-                    <!-- Ses Seviyesi (Yeni) -->
-                    <div class="group">
-                        <div class="flex justify-between text-xs font-semibold text-zinc-400 mb-2">
-                            <span>Ses Seviyesi</span>
-                            <span id="volumeValue" class="text-emerald-400">100%</span>
-                        </div>
-                        <input type="range" id="volumeSlider" min="0" max="1" value="1" step="0.1" class="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sağ Panel: Metin ve Oynatıcı -->
-        <div class="lg:col-span-7 flex flex-col space-y-6">
-            
-            <!-- Kontrol Barı -->
-            <div class="bg-zinc-900/50 backdrop-blur-xl p-4 rounded-3xl border border-zinc-800/50 shadow-xl flex items-center justify-between gap-4">
-                <div class="flex gap-2 w-full">
-                    <button onclick="play()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-2xl transition-all active:scale-95 shadow-[0_0_20px_rgba(37,99,235,0.2)] text-sm">
-                        ▶️ Oynat
-                    </button>
-                    <button onclick="pauseResume()" id="pauseBtn" class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-3.5 rounded-2xl transition-all active:scale-95 text-sm">
-                        ⏸️ Duraklat
-                    </button>
-                    <button onclick="stop()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold py-3.5 px-6 rounded-2xl transition-all active:scale-95 text-sm">
-                        ⏹️
-                    </button>
-                </div>
-            </div>
-
-            <!-- Metin Editörü -->
-            <div class="bg-zinc-900/50 backdrop-blur-xl p-1 rounded-3xl border border-zinc-800/50 shadow-xl flex-1 flex flex-col relative overflow-hidden">
-                <!-- Ses Animasyonu (Sadece konuşurken çıkar) -->
-                <div id="visualizer" class="absolute top-4 right-6 flex items-center gap-1.5 h-6 opacity-0 transition-opacity duration-300 pointer-events-none">
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                    <div class="wave-bar"></div>
-                </div>
-
-                <textarea id="textContent" 
-                    class="w-full flex-1 min-h-[400px] p-6 bg-transparent outline-none text-zinc-300 leading-relaxed resize-none placeholder:text-zinc-700 text-[15px]" 
-                    placeholder="Metin içeriği burada görüntülenecek... Okumaya başlamasını istediğiniz yere tıklayıp 'Oynat' butonuna basabilirsiniz."></textarea>
-            </div>
-        </div>
-
-    </div>
-
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-        const textContent = document.getElementById('textContent');
-        const voiceSelect = document.getElementById('voiceSelect');
-        const rateSlider = document.getElementById('rateSlider');
-        const pitchSlider = document.getElementById('pitchSlider');
-        const volumeSlider = document.getElementById('volumeSlider');
-        const fileNameDisplay = document.getElementById('fileNameDisplay');
-        const pauseBtn = document.getElementById('pauseBtn');
-        const visualizer = document.getElementById('visualizer');
+    const textContent = document.getElementById('textContent');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const rateSlider = document.getElementById('rateSlider');
+    const pitchSlider = document.getElementById('pitchSlider');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const visualizer = document.getElementById('visualizer');
+    
+    let synth = window.speechSynthesis;
+    let voices = [];
+    let isPaused = false;
+    let isAudioUnlocked = false; // MOBİL KİLİT İÇİN
+
+    // 1. MOBİL SES KİLİDİNİ AÇMA (Ekrana ilk dokunuşta motoru uyandırır)
+    document.body.addEventListener('touchstart', function() {
+        if (!isAudioUnlocked) {
+            let unlockMsg = new SpeechSynthesisUtterance('');
+            synth.speak(unlockMsg);
+            isAudioUnlocked = true;
+        }
+    }, { once: true });
+    
+    document.body.addEventListener('click', function() {
+        if (!isAudioUnlocked) {
+            let unlockMsg = new SpeechSynthesisUtterance('');
+            synth.speak(unlockMsg);
+            isAudioUnlocked = true;
+        }
+    }, { once: true });
+
+    function populateVoiceList() {
+        voices = synth.getVoices();
+        voiceSelect.innerHTML = '';
         
-        let synth = window.speechSynthesis;
-        let voices = [];
-        let isPaused = false;
-
-        // Sesleri Yükle ve Filtrele
-        function populateVoiceList() {
-            voices = synth.getVoices();
-            voiceSelect.innerHTML = '';
-            
-            const sortedVoices = voices.sort((a, b) => {
-                const aQuality = a.name.includes('Neural') || a.name.includes('Google') || a.name.includes('Natural');
-                const bQuality = b.name.includes('Neural') || b.name.includes('Google') || b.name.includes('Natural');
-                return bQuality - aQuality;
-            });
-
-            const trVoices = sortedVoices.filter(v => v.lang.includes('tr'));
-            const otherVoices = sortedVoices.filter(v => !v.lang.includes('tr'));
-            const finalVoices = [...trVoices, ...otherVoices];
-
-            finalVoices.forEach((voice) => {
-                const option = document.createElement('option');
-                option.textContent = `${voice.name.replace('Microsoft', '').replace('Google', 'AI')} (${voice.lang})`;
-                option.value = voice.voiceURI;
-                if(voice.lang.includes('tr')) option.style.color = "#60a5fa"; // Türkçeleri renklendir
-                voiceSelect.appendChild(option);
-            });
-        }
-
-        populateVoiceList();
-        if (speechSynthesis.onvoiceschanged !== undefined) {
-            speechSynthesis.onvoiceschanged = populateVoiceList;
-        }
-
-        // Slider UI Güncellemeleri
-        rateSlider.oninput = () => document.getElementById('speedValue').textContent = rateSlider.value + 'x';
-        pitchSlider.oninput = () => document.getElementById('pitchValue').textContent = pitchSlider.value;
-        volumeSlider.oninput = () => document.getElementById('volumeValue').textContent = Math.round(volumeSlider.value * 100) + '%';
-
-        // Dosya Analizi
-        document.getElementById('fileInput').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            // Dosya adını kısaltarak göster
-            let displayName = file.name;
-            if(displayName.length > 25) displayName = displayName.substring(0, 22) + "...";
-            fileNameDisplay.textContent = displayName;
-            
-            textContent.value = "⏳ Belge analiz ediliyor, lütfen bekleyin...";
-
-            try {
-                if (file.type === "application/pdf") {
-                    const reader = new FileReader();
-                    reader.onload = async function() {
-                        const typedarray = new Uint8Array(this.result);
-                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                        let fullText = "";
-                        for (let i = 1; i <= pdf.numPages; i++) {
-                            const page = await pdf.getPage(i);
-                            const textContentObj = await page.getTextContent();
-                            fullText += textContentObj.items.map(s => s.str).join(' ') + "\n\n";
-                        }
-                        textContent.value = fullText.trim();
-                    };
-                    reader.readAsArrayBuffer(file);
-                } else {
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        mammoth.extractRawText({arrayBuffer: event.target.result})
-                            .then(result => { textContent.value = result.value; });
-                    };
-                    reader.readAsArrayBuffer(file);
-                }
-            } catch (error) {
-                textContent.value = "❌ Dosya okunurken bir hata oluştu.";
-            }
+        const sortedVoices = voices.sort((a, b) => {
+            const aQuality = a.name.includes('Neural') || a.name.includes('Google') || a.name.includes('Natural');
+            const bQuality = b.name.includes('Neural') || b.name.includes('Google') || b.name.includes('Natural');
+            return bQuality - aQuality;
         });
 
-        // Oynatma Fonksiyonu
-        function play() {
-            if (synth.paused) {
-                synth.resume();
-                isPaused = false;
-                pauseBtn.innerHTML = "⏸️ Duraklat";
-                visualizer.style.opacity = "1";
-                return;
-            }
+        const trVoices = sortedVoices.filter(v => v.lang.includes('tr'));
+        const otherVoices = sortedVoices.filter(v => !v.lang.includes('tr'));
+        const finalVoices = [...trVoices, ...otherVoices];
 
-            synth.cancel();
-            
+        finalVoices.forEach((voice) => {
+            const option = document.createElement('option');
+            option.textContent = `${voice.name.replace('Microsoft', '').replace('Google', 'AI')} (${voice.lang})`;
+            option.value = voice.voiceURI;
+            if(voice.lang.includes('tr')) option.style.color = "#60a5fa";
+            voiceSelect.appendChild(option);
+        });
+    }
+
+    populateVoiceList();
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = populateVoiceList;
+    }
+
+    rateSlider.oninput = () => document.getElementById('speedValue').textContent = rateSlider.value + 'x';
+    pitchSlider.oninput = () => document.getElementById('pitchValue').textContent = pitchSlider.value;
+    volumeSlider.oninput = () => document.getElementById('volumeValue').textContent = Math.round(volumeSlider.value * 100) + '%';
+
+    document.getElementById('fileInput').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        let displayName = file.name;
+        if(displayName.length > 25) displayName = displayName.substring(0, 22) + "...";
+        fileNameDisplay.textContent = displayName;
+        textContent.value = "⏳ Belge analiz ediliyor...";
+
+        try {
+            if (file.type === "application/pdf") {
+                const reader = new FileReader();
+                reader.onload = async function() {
+                    const typedarray = new Uint8Array(this.result);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    let fullText = "";
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContentObj = await page.getTextContent();
+                        fullText += textContentObj.items.map(s => s.str).join(' ') + "\n\n";
+                    }
+                    textContent.value = fullText.trim();
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    mammoth.extractRawText({arrayBuffer: event.target.result})
+                        .then(result => { textContent.value = result.value; });
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        } catch (error) {
+            textContent.value = "❌ Dosya okunurken bir hata oluştu.";
+        }
+    });
+
+    function play() {
+        if (synth.paused) {
+            synth.resume();
+            isPaused = false;
+            pauseBtn.innerHTML = "⏸️ Duraklat";
+            visualizer.style.opacity = "1";
+            return;
+        }
+
+        // 2. MOBİL İÇİN GÜVENLİ DURDURMA (Hemen cancel yapıp speak yapmak mobilde buga sokabilir)
+        synth.cancel();
+        
+        setTimeout(() => {
             const startPos = textContent.selectionStart || 0;
             const textToRead = textContent.value.substring(startPos);
             if (!textToRead.trim()) return;
@@ -234,39 +130,42 @@
             utterance.voice = voices.find(v => v.voiceURI === voiceSelect.value);
             utterance.rate = parseFloat(rateSlider.value);
             utterance.pitch = parseFloat(pitchSlider.value);
-            utterance.volume = parseFloat(volumeSlider.value); // YENİ: Ses seviyesi
+            utterance.volume = parseFloat(volumeSlider.value);
 
             utterance.onstart = () => visualizer.style.opacity = "1";
             utterance.onend = () => visualizer.style.opacity = "0";
-            utterance.onerror = () => visualizer.style.opacity = "0";
+            utterance.onerror = (e) => {
+                console.error("Ses hatası:", e);
+                visualizer.style.opacity = "0";
+            };
 
             isPaused = false;
             pauseBtn.innerHTML = "⏸️ Duraklat";
             synth.speak(utterance);
-        }
+        }, 50); // 50ms gecikme mobil tarayıcının rahatlamasını sağlar
+    }
 
-        // Duraklat / Devam Et
-        function pauseResume() {
-            if (synth.speaking && !synth.paused) {
-                synth.pause();
-                isPaused = true;
-                pauseBtn.innerHTML = "▶️ Devam Et";
-                visualizer.style.opacity = "0";
-            } else if (synth.paused) {
-                synth.resume();
-                isPaused = false;
-                pauseBtn.innerHTML = "⏸️ Duraklat";
-                visualizer.style.opacity = "1";
-            }
-        }
-
-        // Tamamen Durdur
-        function stop() {
-            synth.cancel();
+    function pauseResume() {
+        if (synth.speaking && !synth.paused) {
+            synth.pause();
+            isPaused = true;
+            pauseBtn.innerHTML = "▶️ Devam Et";
+            visualizer.style.opacity = "0";
+        } else if (synth.paused) {
+            synth.resume();
             isPaused = false;
             pauseBtn.innerHTML = "⏸️ Duraklat";
-            visualizer.style.opacity = "0";
+            visualizer.style.opacity = "1";
         }
+    }
+
+    function stop() {
+        synth.cancel();
+        isPaused = false;
+        pauseBtn.innerHTML = "⏸️ Duraklat";
+        visualizer.style.opacity = "0";
+    }
+</script>
     </script>
 </body>
 </html>
